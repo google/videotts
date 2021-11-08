@@ -38,6 +38,11 @@
             rowEl: ".video-player-controls__time-stamp",
             buttonCss: "align-center justify-center mx-2",
             captionContainer: ".vjs-text-track-display"
+        },
+        "rapid-cloud.ru": {
+            rowEl: ".jw-button-container",
+            buttonCss: "jw-icon jw-icon-inline jw-button-color jw-reset",
+            captionContainer: ".jw-captions"
         }
     }
 
@@ -45,13 +50,43 @@
     var pitch = 1;
     var volumeFactor = .1;
     var voiceUri = undefined;
-  
-    var host = window.location.host;
-    host = host.substring(host.lastIndexOf(".", host.lastIndexOf(".") - 1) + 1);
-    var config = configMap[host];
-  
+
+    var getConfig = host => {
+        host = host.substring(host.lastIndexOf(".", host.lastIndexOf(".") - 1) + 1);
+        return configMap[host];
+    }
+
+    function getPageUrl(page) {
+        var script = document.currentScript;
+        if (!script) {
+            var scripts = document.getElementsByTagName('script');
+            script = scripts[scripts.length - 1];
+        }
+        return new URL(page, script.getAttribute('src'));
+    };
+
+    var config = getConfig(window.location.host);
+
     if (!config) {
-        alert("Script is not supported on " + host);
+        // Find iframe
+        var matchingFrames = [];
+        document.querySelectorAll("iframe").forEach(el => {
+            var src = el.getAttribute("src");
+            try {
+                if (getConfig(new URL(src).host)) {
+                    matchingFrames.push(el);
+                }
+            } catch (e) {
+                // Ignore
+            }
+        });
+        if (matchingFrames.length == 1) {
+            var el = matchingFrames[0];
+            window.open(el.getAttribute("src"));
+            el.setAttribute("src", getPageUrl("iframe.html").href);
+        } else {
+            alert("Script is not supported on " + window.location.host);
+        }
         return;
     }
 
@@ -132,15 +167,7 @@
         }
     }
 
-    var watcherUrl = (function() {
-        var script = document.currentScript;
-        if (!script) {
-            var scripts = document.getElementsByTagName('script');
-            script = scripts[scripts.length - 1];
-        }
-        return new URL("prefwatcher.html", script.getAttribute('src'));
-    }());
-
+    var watcherUrl = getPageUrl("prefwatcher.html");
     var watcher=document.createElement('iframe');
     watcher.setAttribute("height","0");
     watcher.setAttribute("width","0");
