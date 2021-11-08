@@ -20,7 +20,9 @@
   </head>
   <body>
     <div class="main_wrapper">
-        <div id="video_config">
+      <h3>Video TTS</h3>
+      <p>A simple bookmarklet to auto speak video subtitles using the system TTS engine</p>
+      <div id="video_config">
             <div class="sample-text-wrapper">
                 <input type="text" id="sample-text" value="Hello, this is a sample text" />
             </div>
@@ -54,12 +56,7 @@
           <br/>
           Drag this link to the bookmarks bar <a id="bookmarklet">Video TTS</a>
         </div>
- 
     </div>
-
-    <script id="code-template">
-!function(t,e,n,o){if(window.toggleVideoTTS)window.toggleVideoTTS();else{var i=window.location.host,c={"netflix.com":{rowEl:".PlayerControlsNeo__button-control-row",buttonCss:"PlayerControls--control-element nfp-button-control",captionContainer:".player-timedtext"},"youtube.com":{rowEl:".ytp-left-controls",buttonCss:"ytp-button",captionContainer:".ytp-caption-window-container"},"tubitv.com":{rowEl:"header .Container",buttonCss:"huzxe",captionContainer:"#captionsComponent"},"funimation.com": {rowEl: ".video-player-controls__time-stamp",buttonCss: "align-center justify-center mx-2",captionContainer: ".vjs-text-track-display"}}[i=i.substring(i.lastIndexOf(".",i.lastIndexOf(".")-1)+1)];if(c){var r=function(t){return document.querySelector(t)},s=null;p(),window.speechSynthesis.addEventListener("voiceschanged",p);var a=r(c.rowEl),l=!1,u=document.createElement("button");u.className=c.buttonCss,u.innerText="Tts",window.toggleVideoTTS=u.onclick=function(){l=!l,h(),u.style.textDecoration=l?"line-through":""},a.appendChild(u);var d="",w=new MutationObserver(function(){var o=r(c.captionContainer).innerText;d!=o&&(d=o,function(o){var i,c=new SpeechSynthesisUtterance(o);c.rate=n,c.pitch=e,c.voice=s,c.onstart=function(){i=r("video").volume,r("video").volume=i*t},c.onend=function(){r("video").volume=i},window.speechSynthesis.speak(c)}(o))});h()}else alert("Script is not supported on "+i)}function p(){s=window.speechSynthesis.getVoices().filter(t=>t.voiceURI==o)[0]}function h(){l?(w.disconnect(),window.speechSynthesis.cancel()):w.observe(document,{attributes:!1,childList:!0,subtree:!0})}}
-    </script>
 
     <script src="index.js"></script>
   </body>

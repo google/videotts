@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-(function(volumeFactor, pitch, rate, voiceUri) {
+(function() {
+    if (window.toggleVideoTTS) {
+        window.toggleVideoTTS();
+        return;
+    }
+
     const configMap = {
         "netflix.com": {
             rowEl: ".PlayerControlsNeo__button-control-row",
@@ -35,12 +40,11 @@
             captionContainer: ".vjs-text-track-display"
         }
     }
-  
-    if (window.toggleVideoTTS) {
-        window.toggleVideoTTS();
-        return;
-    }
-  
+
+    var rate = 1;
+    var pitch = 1;
+    var volumeFactor = .1;
+    var voiceUri = undefined;
   
     var host = window.location.host;
     host = host.substring(host.lastIndexOf(".", host.lastIndexOf(".") - 1) + 1);
@@ -50,7 +54,7 @@
         alert("Script is not supported on " + host);
         return;
     }
-  
+
     var $ = function(q) { return document.querySelector(q); }
     var voice = null;
     function loadVoice() {
@@ -108,4 +112,44 @@
         }
     }
     applyTTSState();
-  })
+
+    // Preference watcher
+    var isNumber = value => typeof value === 'number' && isFinite(value);
+    function parsePref(pref) {
+        var ttsSettings = { };
+        try {
+            ttsSettings = JSON.parse(pref);
+        } catch (e) {
+            console.log("Error parsing settings", e);
+            ttsSettings = { }
+        }
+        rate = isNumber(ttsSettings.rate) ? ttsSettings.rate : rate;
+        pitch = isNumber(ttsSettings.pitch) ? ttsSettings.pitch : pitch;
+        volumeFactor = isNumber(ttsSettings.factor) ? ttsSettings.factor : volumeFactor;
+        if (voiceUri != ttsSettings.voice) {
+            voiceUri = ttsSettings.voice;
+            loadVoice();
+        }
+    }
+
+    var watcherUrl = (function() {
+        var script = document.currentScript;
+        if (!script) {
+            var scripts = document.getElementsByTagName('script');
+            script = scripts[scripts.length - 1];
+        }
+        return new URL("prefwatcher.html", script.getAttribute('src'));
+    }());
+
+    var watcher=document.createElement('iframe');
+    watcher.setAttribute("height","0");
+    watcher.setAttribute("width","0");
+    watcher.style.display = "none";
+    watcher.src = watcherUrl.href;
+    document.body.appendChild(watcher);
+    window.addEventListener('message', (event) => {
+        if (event.origin == watcherUrl.origin) {
+            parsePref(event.data);
+        }
+    });
+})();

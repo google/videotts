@@ -15,8 +15,25 @@
 var $ = q => document.querySelector(q);
 var synth = window.speechSynthesis;
 
-var code = $("#code-template").innerText.trim();
 var voiceMap = { };
+
+var ttsSettings = { };
+try {
+  ttsSettings = JSON.parse(localStorage.ttsSettings);
+} catch (e) {
+  console.log("Error parsing settings", e);
+  ttsSettings = { }
+}
+
+if (ttsSettings.rate) {
+  $('#rate').value = ttsSettings.rate;
+}
+if (ttsSettings.pitch) {
+  $('#pitch').value = ttsSettings.pitch;
+}
+if (ttsSettings.factor) {
+  $('#volume-factor').value = ttsSettings.factor;
+}
 
 function populateVoiceList() {
   var voices = synth.getVoices();
@@ -34,10 +51,11 @@ function populateVoiceList() {
   }
 
   var voiceSelect = $('select');
-  var selectedIndex = voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
   voiceSelect.innerHTML = '<option value="null">Default</option>';
 
   voiceMap = { }
+  var selectedIndex = 0;
+  var count = 1;
   for(i = 0; i < sortedGroups.length ; i++) {
     var group = sortedGroups[i];
     var optgroup = document.createElement("optgroup");
@@ -51,7 +69,12 @@ function populateVoiceList() {
       option.setAttribute('value', key);
       voiceMap[key] = group[j];
 
+      if (group[j].voiceURI == ttsSettings.voice) {
+        selectedIndex = count;
+      }
+
       optgroup.appendChild(option);
+      count++;
 
     }
     voiceSelect.appendChild(optgroup);
@@ -59,12 +82,14 @@ function populateVoiceList() {
   voiceSelect.selectedIndex = selectedIndex;
 }
 populateVoiceList();
+
 if (synth.onvoiceschanged !== undefined) {
   synth.onvoiceschanged = populateVoiceList;
 }
 
 document.querySelectorAll("input[type=range]").forEach(el => {
   el.onchange = el.oninput = e =>  el.parentNode.previousSibling.innerHTML = el.value;
+  el.onchange();
 });
 
 function playTts() {
@@ -77,16 +102,19 @@ function playTts() {
   window.speechSynthesis.speak(speech);
 }
 
-function updateLink() {
-  var link = location.href.substring(0, location.href.lastIndexOf("/")+1) + "/tts.js";
-  var rate = parseFloat($('#rate').value);
-  var pitch = parseFloat($('#pitch').value);
-  var factor = parseFloat($('#volume-factor').value);
-  var voice = voiceMap[$('select').value]?.voiceURI;
-  var script = `javascript:${code}(${factor},${pitch},${rate},'${voice}');`
-  $("#bookmarklet").href = script;
+function saveValues() {
+  var ttsSettings = {
+    rate: parseFloat($('#rate').value),
+    pitch: parseFloat($('#pitch').value),
+    factor: parseFloat($('#volume-factor').value),
+    voice: voiceMap[$('select').value]?.voiceURI
+  }
+  localStorage.ttsSettings = JSON.stringify(ttsSettings);
+  console.log(localStorage.ttsSettings)
 }
 
 document.querySelectorAll("#pitch, #rate, #voice-list").forEach(el =>  el.addEventListener("change", playTts))
-document.querySelectorAll("#pitch, #rate, #volume-factor, #voice-list").forEach(el => el.addEventListener("change", updateLink))
-updateLink();
+document.querySelectorAll("#pitch, #rate, #volume-factor, #voice-list").forEach(el => el.addEventListener("change", saveValues))
+
+// updateLink
+$("#bookmarklet").setAttribute("href", `javascript:(function(){var%20s=document.createElement('script');s.setAttribute('src','${new URL("tts.js", window.location.href).href}');document.getElementsByTagName('body')[0].appendChild(s)})();`);
